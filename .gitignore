@@ -4,6 +4,7 @@
 /config
 #upload
 /upload
+config.json
 
 # dependencies
 /node_modules
