@@ -9,6 +9,10 @@ const GOOGLE_CLIENT_ID = conf.gg.client_id;
 const GOOGLE_CLIENT_SECRET = conf.gg.secret;
 const GOOGLE_LOGIN_REDIRECT_URI = "http://localhost:3000/login/redirect";
 const GOOGLE_SIGNUP_REDIRECT_URI = "http://localhost:3000/signup/redirect";
+// 토큰을 요청하기 위한 구글 인증 서버 url
+const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
+// email, google id 등을 가져오기 위한 url
+const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
 // 로그인 버튼을 누르면 GET /login으로 이동
 app.get("/", (req, res) => {
@@ -49,10 +53,28 @@ app.get("/signup", (req, res) => {
   res.redirect(url);
 });
 
-app.get("/signup/redirect", (req, res) => {
+app.get("/signup/redirect", async (req, res) => {
   const { code } = req.query;
   console.log(`code: ${code}`);
-  res.send("ok");
+
+  // access_token, refresh_token 등의 구글 토큰 정보 가져오기
+  const resp = await axios.post(GOOGLE_TOKEN_URL, {
+    // x-www-form-urlencoded(body)
+    code,
+    client_id: GOOGLE_CLIENT_ID,
+    client_secret: GOOGLE_CLIENT_SECRET,
+    redirect_uri: GOOGLE_SIGNUP_REDIRECT_URI,
+    grant_type: "authorization_code",
+  });
+  // email, google id 등의 사용자 구글 계정 정보 가져오기
+  const resp2 = await axios.get(GOOGLE_USERINFO_URL, {
+    // Request Header에 Authorization 추가
+    headers: {
+      Authorization: `Bearer ${resp.data.access_token}`,
+    },
+  });
+
+  res.json(resp2.data);
 });
 
 app.listen(3000, () => {
